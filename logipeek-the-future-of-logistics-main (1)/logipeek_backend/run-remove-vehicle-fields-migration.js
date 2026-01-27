@@ -1,0 +1,41 @@
+const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
+require('dotenv').config();
+
+async function runMigration() {
+  const pool = new Pool({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+  });
+
+  try {
+    console.log('🔄 Avtomobil maydonlarini olib tashlash migratsiyasini boshlash...');
+
+    // Read migration SQL
+    const migrationSQL = fs.readFileSync(
+      path.join(__dirname, 'remove-vehicle-fields-migration.sql'),
+      'utf8'
+    );
+
+    // Execute migration
+    await pool.query(migrationSQL);
+
+    console.log('✅ Migratsiya muvaffaqiyatli bajarildi!');
+    console.log('📋 O\'zgarishlar:');
+    console.log('   - vehicle_model maydoni olib tashlandi');
+    console.log('   - license_plate maydoni olib tashlandi');
+    console.log('   - license_plate unique constraint olib tashlandi');
+
+  } catch (error) {
+    console.error('❌ Migratsiya xatosi:', error);
+    process.exit(1);
+  } finally {
+    await pool.end();
+  }
+}
+
+runMigration();
