@@ -8,10 +8,8 @@ import { AuthService } from './auth.service';
 import { User, UserSchema } from '../../schemas/user.schema';
 import { DriverProfile, DriverProfileSchema } from '../../schemas/driver-profile.schema';
 import { ShipperProfile, ShipperProfileSchema } from '../../schemas/shipper-profile.schema';
-import { VerificationCode, VerificationCodeSchema } from '../../schemas/verification-code.schema';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
-import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -19,7 +17,6 @@ import { EmailModule } from '../email/email.module';
       { name: User.name, schema: UserSchema },
       { name: DriverProfile.name, schema: DriverProfileSchema },
       { name: ShipperProfile.name, schema: ShipperProfileSchema },
-      { name: VerificationCode.name, schema: VerificationCodeSchema },
     ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
@@ -32,7 +29,6 @@ import { EmailModule } from '../email/email.module';
       }),
       inject: [ConfigService],
     }),
-    EmailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, LocalStrategy],
