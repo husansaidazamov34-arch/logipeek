@@ -2,17 +2,12 @@
 FROM node:20-alpine
 
 # Ish katalogini yaratish
-WORKDIR /app
+WORKDIR /app/logipeek_backend
 
 # Package.json fayllarini nusxalash
-COPY package*.json ./
-COPY logipeek_backend/package*.json ./logipeek_backend/
+COPY logipeek_backend/package*.json ./
 
-# Root dependencies o'rnatish
-RUN npm install
-
-# Backend katalogiga o'tish va dependencies o'rnatish
-WORKDIR /app/logipeek_backend
+# Dependencies o'rnatish
 RUN npm install
 
 # Backend kodini nusxalash
@@ -25,4 +20,4 @@ RUN npm run build
 EXPOSE 5000
 
 # Ishga tushirish
-CMD ["sh", "-c", "npm run start:prod"]
+CMD ["node", "dist/main"]

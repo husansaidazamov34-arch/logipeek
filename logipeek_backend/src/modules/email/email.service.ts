@@ -23,18 +23,28 @@ export class EmailService {
     const mailjetSecretKey = this.configService.get('MAILJET_SECRET_KEY');
     
     if (mailjetApiKey && mailjetSecretKey) {
-      console.log('📧 Email yuborish uchun Mailjet ishlatilmoqda');
-      this.mailjet = Mailjet.connect(mailjetApiKey, mailjetSecretKey);
-      this.useMailjet = true;
+      try {
+        console.log('📧 Email yuborish uchun Mailjet ishlatilmoqda');
+        this.mailjet = new Mailjet({
+          apiKey: mailjetApiKey,
+          apiSecret: mailjetSecretKey
+        });
+        this.useMailjet = true;
+      } catch (error) {
+        console.error('❌ Mailjet konfiguratsiya xatosi:', error);
+        console.log('⚠️  Development mode yoqildi');
+        this.useMailjet = false;
+      }
     } else {
       console.log('❌ MAILJET_API_KEY yoki MAILJET_SECRET_KEY topilmadi');
+      console.log('⚠️  Development mode yoqildi');
       this.useMailjet = false;
     }
   }
 
   async sendVerificationCode(email: string, code: string) {
     // Development rejimi - faqat konsolga yozish
-    if (this.configService.get('EMAIL_DEV_MODE') === 'true') {
+    if (this.configService.get('EMAIL_DEV_MODE') === 'true' || !this.useMailjet) {
       console.log('\n╔════════════════════════════════════════════════════════╗');
       console.log('║  📧 EMAIL TASDIQLASH KODI (DEV REJIMI)                ║');
       console.log('╠════════════════════════════════════════════════════════╣');
@@ -117,7 +127,7 @@ export class EmailService {
 
   async sendPasswordResetCode(email: string, code: string, fullName: string) {
     // Development rejimi - faqat konsolga yozish
-    if (this.configService.get('EMAIL_DEV_MODE') === 'true') {
+    if (this.configService.get('EMAIL_DEV_MODE') === 'true' || !this.useMailjet) {
       console.log('\n╔════════════════════════════════════════════════════════╗');
       console.log('║  🔐 PAROL TIKLASH KODI (DEV REJIMI)                   ║');
       console.log('╠════════════════════════════════════════════════════════╣');
