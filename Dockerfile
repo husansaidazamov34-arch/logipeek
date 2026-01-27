@@ -25,4 +25,4 @@ RUN npm run build
 EXPOSE 5000
 
 # Ishga tushirish
-CMD ["npm", "run", "start:prod"]
+CMD ["sh", "-c", "npm run start:prod"]
