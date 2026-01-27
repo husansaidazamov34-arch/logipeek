@@ -77,10 +77,16 @@ setTimeout(() => {
   app.use('/api', createProxyMiddleware({
     target: `http://localhost:${BACKEND_PORT}`,
     changeOrigin: true,
-    logLevel: 'silent',
+    logLevel: 'info',
+    onProxyReq: (proxyReq, req, res) => {
+      console.log(`🔄 Proxying ${req.method} ${req.url} to backend`);
+    },
+    onProxyRes: (proxyRes, req, res) => {
+      console.log(`✅ Backend responded with ${proxyRes.statusCode} for ${req.url}`);
+    },
     onError: (err, req, res) => {
-      console.error('Proxy error:', err.message);
-      res.status(500).json({ error: 'Backend not available' });
+      console.error('❌ Proxy error:', err.message);
+      res.status(500).json({ error: 'Backend not available', details: err.message });
     }
   }));
 
@@ -123,7 +129,7 @@ setTimeout(() => {
     console.log(`📱 Frontend: http://localhost:${PORT}`);
     console.log(`🔧 API: http://localhost:${PORT}/api/v1`);
   });
-}, 3000);
+}, 8000); // 8 soniya kutamiz
 
 // Handle process termination
 process.on('SIGTERM', () => {
