@@ -5,6 +5,11 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { AppModule } from './app.module';
 
+// Fix for crypto global issue in NestJS scheduler
+if (typeof global.crypto === 'undefined') {
+  global.crypto = require('crypto');
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
