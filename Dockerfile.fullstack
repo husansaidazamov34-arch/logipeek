@@ -124,6 +124,20 @@ setTimeout(() => {
     }
   }));
 
+  // Proxy WebSocket connections to backend
+  app.use('/socket.io', createProxyMiddleware({
+    target: `http://localhost:${BACKEND_PORT}`,
+    changeOrigin: true,
+    ws: true, // Enable WebSocket proxying
+    logLevel: 'info',
+    onProxyReq: (proxyReq, req, res) => {
+      console.log(`🔄 Proxying WebSocket ${req.url} to backend`);
+    },
+    onError: (err, req, res) => {
+      console.error('❌ WebSocket proxy error:', err.message);
+    }
+  }));
+
   // Health check endpoint
   app.get('/health', (req, res) => {
     res.json({ 
