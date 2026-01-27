@@ -21,8 +21,11 @@ async function bootstrap() {
   console.log('JWT_SECRET length:', process.env.JWT_SECRET?.length || 0);
   console.log('CORS_ORIGIN:', process.env.CORS_ORIGIN);
   
+  // Set fallback MongoDB URI if missing
   if (!process.env.MONGODB_URI) {
     console.error('❌ MONGODB_URI environment variable is missing!');
+    process.env.MONGODB_URI = 'mongodb+srv://logipeek_db_user:admin123@cluster0.hzggjlp.mongodb.net/logipeek_db?retryWrites=true&w=majority&appName=Cluster0';
+    console.log('🔧 Using fallback MongoDB URI');
   }
   if (!process.env.JWT_SECRET) {
     console.error('❌ JWT_SECRET environment variable is missing!');
