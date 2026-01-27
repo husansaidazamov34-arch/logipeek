@@ -1,8 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { extname } from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class UploadService {
@@ -13,6 +13,10 @@ export class UploadService {
     if (!fs.existsSync(this.uploadPath)) {
       fs.mkdirSync(this.uploadPath, { recursive: true });
     }
+  }
+
+  private generateUniqueId(): string {
+    return crypto.randomBytes(16).toString('hex');
   }
 
   async uploadLicenseImage(file: Express.Multer.File): Promise<string> {
@@ -34,7 +38,7 @@ export class UploadService {
 
     // Generate unique filename
     const fileExtension = extname(file.originalname);
-    const fileName = `license_${uuidv4()}${fileExtension}`;
+    const fileName = `license_${this.generateUniqueId()}${fileExtension}`;
     const filePath = path.join(this.uploadPath, fileName);
 
     try {
