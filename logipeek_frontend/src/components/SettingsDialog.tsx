@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { usersApi, api } from "@/lib/api";
-import { User, Mail, Phone, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Trash2, AlertTriangle } from "lucide-react";
+import { usersApi } from "@/lib/api";
+import { User, Mail, Phone, Lock, Eye, EyeOff, AlertCircle, Trash2, AlertTriangle } from "lucide-react";
 import { useDeleteAccount } from "@/hooks/useDeleteAccount";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,17 +18,11 @@ interface SettingsDialogProps {
   onUpdate: () => void;
 }
 
-type Step = 'form' | 'verify';
-
 export function SettingsDialog({ open, onOpenChange, user, onUpdate }: SettingsDialogProps) {
   const { t } = useTranslation();
   const { logout } = useAuth();
   const deleteAccountMutation = useDeleteAccount();
-  const [step, setStep] = useState<Step>('form');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
-  const [countdown, setCountdown] = useState(0);
-  const [pendingUpdate, setPendingUpdate] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     fullName: user?.fullName || "",
@@ -45,22 +39,17 @@ export function SettingsDialog({ open, onOpenChange, user, onUpdate }: SettingsD
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const handleDeleteAccount = async () => {
     try {
       await deleteAccountMutation.mutateAsync();
       toast.success(t('account.deleteSuccess'));
       onOpenChange(false);
-      logout(); // Logout after successful deletion
+      logout();
     } catch (error: any) {
       toast.error(error.response?.data?.message || t('account.deleteError'));
     }
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -115,32 +104,20 @@ export function SettingsDialog({ open, onOpenChange, user, onUpdate }: SettingsD
         return;
       }
 
-      // Determine which email to send verification code to
-      const emailForVerification = updateData.email ? formData.email : user.email;
+      // Direct update without email verification
+      await usersApi.updateProfile(user._id, updateData);
       
-      // Always send verification code for any profile update
-      // Add forUpdate=true query parameter to allow sending to existing emails
-      await api.post('/auth/send-verification-code?forUpdate=true', { email: emailForVerification });
+      toast.success("Profil muvaffaqiyatli yangilandi");
+      onUpdate();
+      onOpenChange(false);
       
-      if (updateData.email) {
-        toast.success('Tasdiqlash kodi yangi emailga yuborildi');
-      } else {
-        toast.success('Tasdiqlash kodi emailingizga yuborildi');
-      }
-      
-      setPendingUpdate(updateData);
-      setStep('verify');
-      setCountdown(300); // 5 minutes
-      
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      // Reset form
+      setFormData({
+        ...formData,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Xatolik yuz berdi";
       toast.error(errorMessage);
@@ -148,156 +125,122 @@ export function SettingsDialog({ open, onOpenChange, user, onUpdate }: SettingsD
       setIsLoading(false);
     }
   };
-  const handleVerifyAndUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
 
-    try {
-      // Determine which email was used for verification
-      const emailForVerification = pendingUpdate.email ? formData.email : user.email;
-      
-      console.log('Verifying code:', verificationCode, 'for email:', emailForVerification);
-      
-      // Verify the code
-      await api.post('/auth/verify-email', { 
-        email: emailForVerification, 
-        code: verificationCode 
-      });
-
-      // Update profile
-      await usersApi.updateProfile(user.id, pendingUpdate);
-      
-      toast.success("Ma'lumotlar muvaffaqiyatli yangilandi!");
-      
-      setFormData({
-        ...formData,
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-      setStep('form');
-      setVerificationCode('');
-      setPendingUpdate(null);
-      
-      onUpdate();
-      onOpenChange(false);
-    } catch (error: any) {
-      console.error('Settings verification error:', error.response?.data);
-      const errorMessage = error.response?.data?.message || "Noto'g'ri kod";
-      
-      if (errorMessage.includes('muddati tugagan') || errorMessage.includes('expired')) {
-        toast.error('Tasdiqlash kodi muddati tugagan. Yangi kod so\'rang.');
-      } else if (errorMessage.includes('Noto\'g\'ri') || errorMessage.includes('yaroqsiz') || errorMessage.includes('invalid')) {
-        toast.error('Noto\'g\'ri tasdiqlash kodi. Qaytadan kiriting.');
-      } else {
-        toast.error(errorMessage);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendCode = async () => {
-    setIsLoading(true);
-    try {
-      // Determine which email to resend to
-      const emailForVerification = pendingUpdate.email ? formData.email : user.email;
-      
-      await api.post('/auth/send-verification-code?forUpdate=true', { email: emailForVerification });
-      toast.success('Kod qayta yuborildi');
-      setCountdown(300); // 5 minutes
-      
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } catch (error) {
-      toast.error('Kodni qayta yuborishda xatolik');
-    } finally {
-      setIsLoading(false);
-    }
-  };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0 pb-4 border-b">
-          <DialogTitle className="text-2xl font-bold">{t('dashboard.settings')}</DialogTitle>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold">
+            {t('settings.title')}
+          </DialogTitle>
         </DialogHeader>
 
-        {step === 'form' ? (
-          <div className="flex-1 overflow-y-auto pr-2 py-4 max-h-[70vh]">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Full Name */}
-              <div className="space-y-2">
-                <Label htmlFor="fullName">{t('auth.fullName')}</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="fullName"
-                    type="text"
-                    placeholder="Alisher Karimov"
-                    className="pl-10"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  />
-                </div>
+        {!showDeleteConfirm ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Full Name */}
+            <div>
+              <Label htmlFor="fullName" className="text-sm font-medium">
+                {t('profile.fullName')}
+              </Label>
+              <div className="relative mt-1">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="fullName"
+                  type="text"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  className="pl-10"
+                  placeholder="To'liq ismingizni kiriting"
+                />
               </div>
+            </div>
 
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">{t('auth.email')}</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="alisher@example.com"
-                    className="pl-10"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
+            {/* Email */}
+            <div>
+              <Label htmlFor="email" className="text-sm font-medium">
+                {t('profile.email')}
+              </Label>
+              <div className="relative mt-1">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase().trim() })}
+                  className="pl-10"
+                  placeholder="email@example.com"
+                />
               </div>
+            </div>
 
-              {/* Phone */}
-              <div className="space-y-2">
-                <Label htmlFor="phone">{t('auth.phone')}</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+998901234567"
-                    className="pl-10"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">Format: +998XXXXXXXXX</p>
+            {/* Phone */}
+            <div>
+              <Label htmlFor="phone" className="text-sm font-medium">
+                {t('profile.phone')}
+              </Label>
+              <div className="relative mt-1">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    // Auto-format phone number
+                    if (!value.startsWith('+998')) {
+                      if (value.startsWith('998')) {
+                        value = '+' + value;
+                      } else if (value.startsWith('9')) {
+                        value = '+998' + value;
+                      } else if (!value.startsWith('+')) {
+                        value = '+998' + value;
+                      }
+                    }
+                    // Remove non-digits except +
+                    value = value.replace(/[^\d+]/g, '');
+                    // Limit length
+                    if (value.length <= 13) {
+                      setFormData({ ...formData, phone: value });
+                    }
+                  }}
+                  className="pl-10"
+                  placeholder="+998 90 123 45 67"
+                />
               </div>
+              <p className="text-xs text-muted-foreground mt-1">Format: +998XXXXXXXXX</p>
+            </div>
 
-              {/* Divider */}
-              <div className="border-t pt-4">
-                <h3 className="text-sm font-semibold mb-3">Parolni o'zgartirish (ixtiyoriy)</h3>
+            {/* License Image Upload for Drivers */}
+            {user?.role === 'driver' && (
+              <div>
+                <Label className="text-sm font-medium">
+                  Haydovchilik guvohnomasi rasmi
+                </Label>
+                <LicenseImageUpload
+                  currentImageUrl={formData.licenseImageUrl}
+                  onImageUploaded={(url) => setFormData({ ...formData, licenseImageUrl: url })}
+                />
               </div>
+            )}
 
+            {/* Password Change Section */}
+            <div className="border-t pt-4">
+              <h3 className="text-sm font-medium mb-3">Parolni o'zgartirish (ixtiyoriy)</h3>
+              
               {/* Current Password */}
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">Joriy parol</Label>
-                <div className="relative">
+              <div className="mb-3">
+                <Label htmlFor="currentPassword" className="text-sm font-medium">
+                  Joriy parol
+                </Label>
+                <div className="relative mt-1">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     id="currentPassword"
                     type={showCurrentPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10"
                     value={formData.currentPassword}
                     onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                    className="pl-10 pr-10"
+                    placeholder="Joriy parolingizni kiriting"
                   />
                   <button
                     type="button"
@@ -310,17 +253,20 @@ export function SettingsDialog({ open, onOpenChange, user, onUpdate }: SettingsD
               </div>
 
               {/* New Password */}
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">Yangi parol</Label>
-                <div className="relative">
+              <div className="mb-3">
+                <Label htmlFor="newPassword" className="text-sm font-medium">
+                  Yangi parol
+                </Label>
+                <div className="relative mt-1">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     id="newPassword"
                     type={showNewPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10"
                     value={formData.newPassword}
                     onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                    className="pl-10 pr-10"
+                    placeholder="Yangi parolingizni kiriting"
+                    minLength={6}
                   />
                   <button
                     type="button"
@@ -330,21 +276,23 @@ export function SettingsDialog({ open, onOpenChange, user, onUpdate }: SettingsD
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground">Kamida 6 ta belgi</p>
+                <p className="text-xs text-muted-foreground mt-1">Kamida 6 ta belgi</p>
               </div>
 
-              {/* Confirm Password */}
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Yangi parolni tasdiqlang</Label>
-                <div className="relative">
+              {/* Confirm New Password */}
+              <div>
+                <Label htmlFor="confirmPassword" className="text-sm font-medium">
+                  Yangi parolni tasdiqlang
+                </Label>
+                <div className="relative mt-1">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    className="pl-10 pr-10"
+                    placeholder="Yangi parolni qayta kiriting"
                   />
                   <button
                     type="button"
@@ -355,154 +303,64 @@ export function SettingsDialog({ open, onOpenChange, user, onUpdate }: SettingsD
                   </button>
                 </div>
               </div>
+            </div>
 
-              {/* License Image Upload for Drivers */}
-              {user?.role === 'driver' && (
-                <div className="border-t pt-4">
-                  <LicenseImageUpload
-                    onImageUploaded={(imageUrl) => setFormData({ ...formData, licenseImageUrl: imageUrl })}
-                    currentImageUrl={formData.licenseImageUrl}
-                    disabled={isLoading}
-                  />
-                </div>
-              )}
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-3 pt-4">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? "Saqlanmoqda..." : "O'zgarishlarni saqlash"}
+              </Button>
 
-              {/* Actions */}
-              <div className="space-y-3 pt-4">
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => onOpenChange(false)}
-                    disabled={isLoading}
-                  >
-                    {t('button.cancel')}
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? t('message.loading') : t('button.save')}
-                  </Button>
-                </div>
-
-                {/* Delete Account Section */}
-                <div className="border-t pt-4">
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
-                      <div className="flex-1">
-                        <h4 className="font-medium text-destructive mb-1">{t('account.delete')}</h4>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          {t('account.deleteWarning')}
-                        </p>
-                        {!showDeleteConfirm ? (
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => setShowDeleteConfirm(true)}
-                            className="gap-2"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            {t('account.delete')}
-                          </Button>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-destructive">
-                              {t('account.deleteConfirm')}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setShowDeleteConfirm(false)}
-                            >
-                              {t('button.cancel')}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              onClick={handleDeleteAccount}
-                              disabled={deleteAccountMutation.isPending}
-                            >
-                              {deleteAccountMutation.isPending ? t('message.loading') : t('account.confirmDelete')}
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
+              {/* Delete Account Button */}
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full"
+                disabled={isLoading}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {t('account.deleteAccount')}
+              </Button>
+            </div>
+          </form>
         ) : (
-          <div className="flex-1 overflow-y-auto pr-2 py-4 max-h-[70vh]">
-            <form onSubmit={handleVerifyAndUpdate} className="space-y-4">
-              <div className="text-center mb-6">
-                <CheckCircle className="w-12 h-12 text-success mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  Tasdiqlash kodi <strong>{pendingUpdate?.email ? formData.email : user.email}</strong> manziliga yuborildi
+          /* Delete Confirmation */
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+              <AlertTriangle className="w-6 h-6 text-destructive flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-destructive">
+                  {t('account.deleteConfirmTitle')}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t('account.deleteConfirmMessage')}
                 </p>
-                {countdown > 0 && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Kod {formatTime(countdown)} davomida amal qiladi
-                  </p>
-                )}
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="code">6 raqamli kodni kiriting</Label>
-                <Input
-                  id="code"
-                  type="text"
-                  placeholder="123456"
-                  className="text-center text-2xl tracking-widest"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  maxLength={6}
-                  required
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    setStep('form');
-                    setVerificationCode('');
-                    setPendingUpdate(null);
-                  }}
-                  disabled={isLoading}
-                >
-                  Orqaga
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1"
-                  disabled={isLoading || verificationCode.length !== 6}
-                >
-                  {isLoading ? "Tekshirilmoqda..." : "Tasdiqlash"}
-                </Button>
-              </div>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={handleResendCode}
-                  disabled={countdown > 0 || isLoading}
-                  className="text-primary text-sm hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Kodni qayta yuborish
-                </button>
-              </div>
-            </form>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1"
+                disabled={deleteAccountMutation.isPending}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteAccount}
+                className="flex-1"
+                disabled={deleteAccountMutation.isPending}
+              >
+                {deleteAccountMutation.isPending ? t('common.deleting') : t('account.confirmDelete')}
+              </Button>
+            </div>
           </div>
         )}
       </DialogContent>
