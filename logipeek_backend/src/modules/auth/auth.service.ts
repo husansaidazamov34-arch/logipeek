@@ -31,16 +31,21 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const { email, password, fullName, phone, role, ...profileData } = registerDto;
 
-    // Check if user exists
+    // Email va telefon raqamni tekshirish
     const existingUser = await this.userModel.findOne({
       $or: [{ email }, { phone }],
     });
 
     if (existingUser) {
-      throw new ConflictException('Email yoki telefon raqam allaqachon ro\'yxatdan o\'tgan');
+      if (existingUser.email === email) {
+        throw new ConflictException('Bu email allaqachon ro\'yxatdan o\'tgan');
+      }
+      if (existingUser.phone === phone) {
+        throw new ConflictException('Bu telefon raqam allaqachon ro\'yxatdan o\'tgan');
+      }
     }
 
-    // Check if license plate exists (for drivers)
+    // Davlat raqamini tekshirish (haydovchilar uchun)
     if (role === UserRole.DRIVER && profileData.licensePlate) {
       const existingDriver = await this.driverProfileModel.findOne({
         licensePlate: profileData.licensePlate,
@@ -51,21 +56,23 @@ export class AuthService {
       }
     }
 
-    // Hash password
+    // Parolni hash qilish
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Foydalanuvchi yaratish
     const user = new this.userModel({
       email,
       passwordHash,
       fullName,
       phone,
       role,
+      isActive: true, // Darhol faollashtirish
+      emailVerified: true, // Email tasdiqlangan deb belgilash
     });
 
     const savedUser = await user.save();
 
-    // Create profile based on role
+    // Rol asosida profil yaratish
     if (role === UserRole.DRIVER) {
       const driverProfile = new this.driverProfileModel({
         userId: savedUser._id,
@@ -82,10 +89,11 @@ export class AuthService {
       await shipperProfile.save();
     }
 
-    // Generate token
+    // Token yaratish
     const token = this.generateToken(savedUser);
 
     return {
+      message: 'Ro\'yxatdan o\'tish muvaffaqiyatli yakunlandi',
       user: this.sanitizeUser(savedUser),
       token,
     };
