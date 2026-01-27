@@ -42,12 +42,25 @@ const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const path = require('path');
 const { spawn } = require('child_process');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BACKEND_PORT = 8080; // Backend'ni 8080 portda ishlatamiz
 
 console.log('🚀 Starting LogiPeek Fullstack...');
+
+// Check if frontend files exist
+const frontendPath = path.join(__dirname, 'frontend/dist');
+const indexPath = path.join(frontendPath, 'index.html');
+
+console.log('📁 Frontend path:', frontendPath);
+console.log('📄 Index.html exists:', fs.existsSync(indexPath));
+
+if (fs.existsSync(frontendPath)) {
+  const files = fs.readdirSync(frontendPath);
+  console.log('📂 Frontend files:', files);
+}
 
 // Start backend server
 console.log(`🔧 Starting backend server on port ${BACKEND_PORT}...`);
@@ -83,23 +96,31 @@ setTimeout(() => {
       timestamp: new Date().toISOString(),
       message: 'LogiPeek Fullstack running',
       backend: `http://localhost:${BACKEND_PORT}`,
-      frontend: `http://localhost:${PORT}`
+      frontend: `http://localhost:${PORT}`,
+      frontendExists: fs.existsSync(indexPath)
     });
   });
 
   // Serve frontend static files
-  app.use(express.static(path.join(__dirname, 'frontend/dist'), {
-    index: false // Disable automatic index.html serving
-  }));
-
-  // Handle React Router - serve index.html for all non-API routes
-  app.get('*', (req, res) => {
-    // Don't serve index.html for API routes
-    if (req.path.startsWith('/api/')) {
-      return res.status(404).json({ error: 'API endpoint not found' });
-    }
-    res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
-  });
+  if (fs.existsSync(frontendPath)) {
+    console.log('✅ Serving frontend static files from:', frontendPath);
+    app.use(express.static(frontendPath));
+    
+    // Handle React Router - serve index.html for all non-API routes
+    app.get('*', (req, res) => {
+      console.log('📄 Serving index.html for:', req.path);
+      res.sendFile(indexPath);
+    });
+  } else {
+    console.error('❌ Frontend files not found at:', frontendPath);
+    app.get('*', (req, res) => {
+      res.status(404).json({ 
+        error: 'Frontend files not found',
+        path: frontendPath,
+        exists: false
+      });
+    });
+  }
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🌐 Fullstack app running on port ${PORT}`);
