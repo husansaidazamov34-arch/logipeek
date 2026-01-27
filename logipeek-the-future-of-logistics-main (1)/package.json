@@ -1,0 +1,13 @@
+{
+  "name": "logipeek-platform",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd logipeek_backend && npm install && npm run build",
+    "start": "cd logipeek_backend && npm run start:prod",
+    "build:frontend": "cd logipeek_frontend && npm install && npm run build",
+    "install:all": "cd logipeek_backend && npm install && cd ../logipeek_frontend && npm install"
+  },
+  "dependencies": {
+    "ogl": "^1.0.11"
+  }
+}
