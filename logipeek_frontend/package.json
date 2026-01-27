@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview --host 0.0.0.0",
     "serve": "vite preview --host 0.0.0.0 --port $PORT",
-    "serve-static": "serve dist -l $PORT -s"
+    "serve-static": "serve dist -l $PORT -s",
+    "start": "serve -s dist -l $PORT"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
