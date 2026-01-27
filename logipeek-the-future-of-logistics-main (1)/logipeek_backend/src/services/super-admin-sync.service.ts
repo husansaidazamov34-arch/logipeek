@@ -17,7 +17,7 @@ export class SuperAdminSyncService implements OnModuleInit {
     await this.syncSuperAdmin();
   }
 
-  private async syncSuperAdmin() {
+  async syncSuperAdmin() {
     const superAdminEmail = process.env.SUPER_ADMIN;
     const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
     const superAdminName = process.env.SUPER_ADMIN_NAME || 'Super Admin';
