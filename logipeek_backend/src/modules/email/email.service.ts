@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as postmark from 'postmark';
+import * as Mailjet from 'node-mailjet';
 
 @Injectable()
 export class EmailService {
-  private postmarkClient: postmark.ServerClient;
-  private usePostmark: boolean;
+  private mailjet: any;
+  private useMailjet: boolean;
 
   constructor(private configService: ConfigService) {
     // Development rejimini tekshirish
@@ -14,19 +14,21 @@ export class EmailService {
     if (devMode) {
       console.log('⚠️  EMAIL DEV MODE YOQILGAN - Kodlar konsolga yoziladi');
       console.log('⚠️  Haqiqiy email yuborish uchun EMAIL_DEV_MODE=false qiling');
-      this.usePostmark = false;
+      this.useMailjet = false;
       return;
     }
 
-    // Postmark API kalitini tekshirish
-    const postmarkApiKey = this.configService.get('POSTMARK_API_KEY');
-    if (postmarkApiKey) {
-      console.log('📧 Email yuborish uchun Postmark ishlatilmoqda');
-      this.postmarkClient = new postmark.ServerClient(postmarkApiKey);
-      this.usePostmark = true;
+    // Mailjet API kalitlarini tekshirish
+    const mailjetApiKey = this.configService.get('MAILJET_API_KEY');
+    const mailjetSecretKey = this.configService.get('MAILJET_SECRET_KEY');
+    
+    if (mailjetApiKey && mailjetSecretKey) {
+      console.log('📧 Email yuborish uchun Mailjet ishlatilmoqda');
+      this.mailjet = Mailjet.apiConnect(mailjetApiKey, mailjetSecretKey);
+      this.useMailjet = true;
     } else {
-      console.log('❌ POSTMARK_API_KEY topilmadi');
-      this.usePostmark = false;
+      console.log('❌ MAILJET_API_KEY yoki MAILJET_SECRET_KEY topilmadi');
+      this.useMailjet = false;
     }
   }
 
@@ -42,7 +44,7 @@ export class EmailService {
       return true;
     }
 
-    if (!this.usePostmark) {
+    if (!this.useMailjet) {
       throw new Error('Email xizmati sozlanmagan');
     }
 
@@ -84,15 +86,27 @@ export class EmailService {
     `;
 
     try {
-      const result = await this.postmarkClient.sendEmail({
-        From: 'noreply@logipeek.com',
-        To: email,
-        Subject: 'Email Tasdiqlash Kodi - LogiPeek',
-        HtmlBody: htmlContent,
-        TextBody: `LogiPeek - Email Tasdiqlash\n\nAssalomu alaykum! LogiPeek tizimiga xush kelibsiz.\n\nRo'yxatdan o'tishni yakunlash uchun quyidagi tasdiqlash kodini kiriting: ${code}\n\nBu kod 10 daqiqa davomida amal qiladi.`,
+      const result = await this.mailjet.post('send', { version: 'v3.1' }).request({
+        Messages: [
+          {
+            From: {
+              Email: 'noreply@logipeek.com',
+              Name: 'LogiPeek'
+            },
+            To: [
+              {
+                Email: email,
+                Name: ''
+              }
+            ],
+            Subject: 'Email Tasdiqlash Kodi - LogiPeek',
+            TextPart: `LogiPeek - Email Tasdiqlash\n\nAssalomu alaykum! LogiPeek tizimiga xush kelibsiz.\n\nRo'yxatdan o'tishni yakunlash uchun quyidagi tasdiqlash kodini kiriting: ${code}\n\nBu kod 10 daqiqa davomida amal qiladi.`,
+            HTMLPart: htmlContent
+          }
+        ]
       });
 
-      console.log(`✅ Tasdiqlash kodi yuborildi: ${email} (Postmark)`, result);
+      console.log(`✅ Tasdiqlash kodi yuborildi: ${email} (Mailjet)`, result.body);
       return true;
     } catch (error) {
       console.error('❌ Email yuborish xatosi:', error);
@@ -114,7 +128,7 @@ export class EmailService {
       return true;
     }
 
-    if (!this.usePostmark) {
+    if (!this.useMailjet) {
       throw new Error('Email xizmati sozlanmagan');
     }
 
@@ -156,15 +170,27 @@ export class EmailService {
     `;
 
     try {
-      const result = await this.postmarkClient.sendEmail({
-        From: 'noreply@logipeek.com',
-        To: email,
-        Subject: 'Parolni Tiklash Kodi - LogiPeek',
-        HtmlBody: htmlContent,
-        TextBody: `LogiPeek - Parolni Tiklash\n\nAssalomu alaykum, ${fullName}!\n\nSiz parolni tiklash so'rovini yubordingiz. Yangi parol o'rnatish uchun quyidagi kodni kiriting: ${code}\n\nBu kod 10 daqiqa davomida amal qiladi.`,
+      const result = await this.mailjet.post('send', { version: 'v3.1' }).request({
+        Messages: [
+          {
+            From: {
+              Email: 'noreply@logipeek.com',
+              Name: 'LogiPeek'
+            },
+            To: [
+              {
+                Email: email,
+                Name: fullName
+              }
+            ],
+            Subject: 'Parolni Tiklash Kodi - LogiPeek',
+            TextPart: `LogiPeek - Parolni Tiklash\n\nAssalomu alaykum, ${fullName}!\n\nSiz parolni tiklash so'rovini yubordingiz. Yangi parol o'rnatish uchun quyidagi kodni kiriting: ${code}\n\nBu kod 10 daqiqa davomida amal qiladi.`,
+            HTMLPart: htmlContent
+          }
+        ]
       });
 
-      console.log(`✅ Parol tiklash kodi yuborildi: ${email} (Postmark)`, result);
+      console.log(`✅ Parol tiklash kodi yuborildi: ${email} (Mailjet)`, result.body);
       return true;
     } catch (error) {
       console.error('❌ Email yuborish xatosi:', error);
