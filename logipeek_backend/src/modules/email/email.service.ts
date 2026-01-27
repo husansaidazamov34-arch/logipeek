@@ -85,16 +85,17 @@ export class EmailService {
 
     try {
       const result = await this.resend.emails.send({
-        from: 'LogiPeek <noreply@logipeek.com>',
+        from: 'onboarding@resend.dev',
         to: email,
         subject: 'Email Tasdiqlash Kodi - LogiPeek',
         html: htmlContent,
       });
 
-      console.log(`✅ Tasdiqlash kodi yuborildi: ${email} (Resend)`);
+      console.log(`✅ Tasdiqlash kodi yuborildi: ${email} (Resend)`, result);
       return true;
     } catch (error) {
       console.error('❌ Email yuborish xatosi:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
       throw new Error('Email yuborishda xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko\'ring.');
     }
   }
@@ -155,16 +156,17 @@ export class EmailService {
 
     try {
       const result = await this.resend.emails.send({
-        from: 'LogiPeek <noreply@logipeek.com>',
+        from: 'onboarding@resend.dev',
         to: email,
         subject: 'Parolni Tiklash Kodi - LogiPeek',
         html: htmlContent,
       });
 
-      console.log(`✅ Parol tiklash kodi yuborildi: ${email} (Resend)`);
+      console.log(`✅ Parol tiklash kodi yuborildi: ${email} (Resend)`, result);
       return true;
     } catch (error) {
       console.error('❌ Email yuborish xatosi:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
       throw new Error('Email yuborishda xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko\'ring.');
     }
   }
