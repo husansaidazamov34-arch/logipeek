@@ -42,6 +42,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:8080',
       'http://localhost:5173',
+      'https://nurturing-sparkle-production-1402.up.railway.app',
       process.env.CORS_ORIGIN,
     ].filter(Boolean),
     credentials: true,
