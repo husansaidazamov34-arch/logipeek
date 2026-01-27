@@ -24,6 +24,7 @@ const RegisterWithVerification = () => {
     role: 'driver' as 'driver' | 'shipper',
     vehicleType: '',
     licenseNumber: '',
+    licensePlate: '',
     companyName: '',
     companyAddress: '',
   });
@@ -64,7 +65,7 @@ const RegisterWithVerification = () => {
     }
 
     if (formData.role === 'driver') {
-      if (!formData.vehicleType || !formData.licenseNumber) {
+      if (!formData.vehicleType || !formData.licenseNumber || !formData.licensePlate) {
         setError('Haydovchi uchun barcha maydonlarni to\'ldiring');
         toast.error('Barcha maydonlarni to\'ldiring');
         return;
@@ -295,6 +296,24 @@ const RegisterWithVerification = () => {
                       <SelectItem value="Furgon">Furgon</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="licensePlate" className="text-red-500 mb-2 block">
+                    Avtomobil davlat raqami
+                  </Label>
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-red-500" />
+                    <Input
+                      id="licensePlate"
+                      type="text"
+                      placeholder="01 A 777 BA"
+                      className="pl-11"
+                      value={formData.licensePlate}
+                      onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value.toUpperCase() })}
+                      required={formData.role === 'driver'}
+                    />
+                  </div>
                 </div>
 
                 <div>
