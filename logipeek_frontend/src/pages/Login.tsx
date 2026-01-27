@@ -118,12 +118,6 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-end mb-4">
-              <Link to="/forgot-password" className="text-primary text-sm hover:underline">
-                {t('auth.forgotPassword')}
-              </Link>
-            </div>
-
             <Button
               type="submit"
               className="w-full btn-gradient py-6 text-lg"

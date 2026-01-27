@@ -10,7 +10,6 @@ import { LandingPage } from "./pages/LandingPage";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import RegisterWithVerification from "./pages/RegisterWithVerification";
-import ForgotPassword from "./pages/ForgotPassword";
 import Driver from "./pages/Driver";
 import Shipper from "./pages/Shipper";
 import Admin from "./pages/Admin";
@@ -35,7 +34,6 @@ const App = () => (
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<RegisterWithVerification />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
             
             {/* Protected dashboard route */}
             <Route

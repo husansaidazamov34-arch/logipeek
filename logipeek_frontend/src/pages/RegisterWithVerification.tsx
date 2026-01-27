@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Truck, Mail, Lock, User, Phone, AlertCircle, FileText, ArrowLeft, CheckCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Truck, Mail, Lock, User, Phone, AlertCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,17 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import Particles from '@/components/reactbit/particles';
-import { api } from '@/lib/api';
-
-type Step = 'details' | 'verify';
 
 const RegisterWithVerification = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<Step>('details');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [countdown, setCountdown] = useState(0);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -35,8 +29,8 @@ const RegisterWithVerification = () => {
   });
   const [error, setError] = useState('');
 
-  // Send verification code after form is filled
-  const handleSendCode = async (e: React.FormEvent) => {
+  // Direct registration without email verification
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -80,21 +74,9 @@ const RegisterWithVerification = () => {
     setLoading(true);
 
     try {
-      await api.post('/auth/send-verification-code', { email: formData.email });
-      toast.success('Tasdiqlash kodi emailga yuborildi');
-      setStep('verify');
-      setCountdown(300); // 5 minutes
-      
-      // Start countdown
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      await register(formData);
+      toast.success('Muvaffaqiyatli ro\'yxatdan o\'tdingiz!');
+      navigate('/dashboard');
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Xatolik yuz berdi';
       setError(errorMessage);
@@ -112,75 +94,6 @@ const RegisterWithVerification = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Verify code and complete registration
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      // First verify the code
-      console.log('Verifying code:', verificationCode, 'for email:', formData.email);
-      await api.post('/auth/verify-email', { email: formData.email, code: verificationCode });
-      
-      // Then complete registration
-      await register(formData);
-      toast.success('Muvaffaqiyatli ro\'yxatdan o\'tdingiz!');
-      navigate('/dashboard');
-    } catch (err: any) {
-      console.error('Verification error:', err.response?.data);
-      const errorMessage = err.response?.data?.message || 'Noto\'g\'ri kod yoki ro\'yxatdan o\'tish xatosi';
-      setError(errorMessage);
-      
-      // Show specific error messages for verification
-      if (errorMessage.includes('muddati tugagan') || errorMessage.includes('expired')) {
-        toast.error('Tasdiqlash kodi muddati tugagan. Yangi kod so\'rang.');
-        setStep('details'); // Go back to get new code
-      } else if (errorMessage.includes('Noto\'g\'ri') || errorMessage.includes('yaroqsiz') || errorMessage.includes('invalid')) {
-        toast.error('Noto\'g\'ri tasdiqlash kodi. Qaytadan kiriting.');
-      } else if (errorMessage.includes('email') && errorMessage.includes('ro\'yxatdan')) {
-        toast.error('Bu email allaqachon ro\'yxatdan o\'tgan. Tizimga kiring yoki boshqa email ishlatib ko\'ring.');
-        setStep('details');
-      } else {
-        toast.error(errorMessage);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Resend verification code
-  const handleResendCode = async () => {
-    setError('');
-    setLoading(true);
-
-    try {
-      await api.post('/auth/send-verification-code', { email: formData.email });
-      toast.success('Tasdiqlash kodi qayta yuborildi');
-      setCountdown(300); // 5 minutes
-      
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } catch (err: any) {
-      toast.error('Kodni qayta yuborishda xatolik');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (

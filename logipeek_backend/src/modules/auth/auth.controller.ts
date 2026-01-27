@@ -3,7 +3,6 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { ForgotPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('auth')
@@ -33,22 +32,6 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Noto\'g\'ri email yoki parol' })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
-  }
-
-  @Post('forgot-password')
-  @ApiOperation({ summary: 'Parolni unutdim - tiklash kodini yuborish' })
-  @ApiResponse({ status: 200, description: 'Tiklash kodi yuborildi' })
-  @ApiResponse({ status: 404, description: 'Foydalanuvchi topilmadi' })
-  async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(dto);
-  }
-
-  @Post('reset-password')
-  @ApiOperation({ summary: 'Parolni tiklash' })
-  @ApiResponse({ status: 200, description: 'Parol yangilandi' })
-  @ApiResponse({ status: 400, description: 'Noto\'g\'ri yoki yaroqsiz kod' })
-  async resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto);
   }
 
   @Get('me')
