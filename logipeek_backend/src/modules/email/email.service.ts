@@ -84,17 +84,12 @@ export class EmailService {
     `;
 
     try {
-      const { data, error } = await this.resend.emails.send({
+      const result = await this.resend.emails.send({
         from: 'LogiPeek <noreply@logipeek.com>',
-        to: [email],
+        to: email,
         subject: 'Email Tasdiqlash Kodi - LogiPeek',
         html: htmlContent,
       });
-
-      if (error) {
-        console.error('❌ Resend email yuborishda xato:', error);
-        throw new Error('Email yuborishda xatolik yuz berdi');
-      }
 
       console.log(`✅ Tasdiqlash kodi yuborildi: ${email} (Resend)`);
       return true;
@@ -159,17 +154,12 @@ export class EmailService {
     `;
 
     try {
-      const { data, error } = await this.resend.emails.send({
+      const result = await this.resend.emails.send({
         from: 'LogiPeek <noreply@logipeek.com>',
-        to: [email],
+        to: email,
         subject: 'Parolni Tiklash Kodi - LogiPeek',
         html: htmlContent,
       });
-
-      if (error) {
-        console.error('❌ Resend email yuborishda xato:', error);
-        throw new Error('Email yuborishda xatolik yuz berdi');
-      }
 
       console.log(`✅ Parol tiklash kodi yuborildi: ${email} (Resend)`);
       return true;
