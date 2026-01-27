@@ -1,0 +1,1 @@
+web: cd logipeek_backend && npm run start:prod

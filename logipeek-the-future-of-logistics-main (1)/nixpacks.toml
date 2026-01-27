@@ -13,4 +13,4 @@ cmds = [
 ]
 
 [start]
-cmd = 'npm start'
+cmd = 'cd logipeek_backend && npm run start:prod'
