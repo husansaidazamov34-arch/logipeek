@@ -30,7 +30,10 @@ import { mongodbConfig } from './config/mongodb.config';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    MongooseModule.forRoot(process.env.MONGODB_URI, mongodbConfig),
+    MongooseModule.forRoot(
+      process.env.MONGODB_URI || 'mongodb://localhost:27017/logipeek_db', 
+      mongodbConfig
+    ),
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: DriverProfile.name, schema: DriverProfileSchema },

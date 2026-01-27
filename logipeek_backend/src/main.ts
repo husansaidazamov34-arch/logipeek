@@ -11,6 +11,17 @@ if (typeof global.crypto === 'undefined') {
 }
 
 async function bootstrap() {
+  // Debug environment variables
+  console.log('🔍 Environment Variables Debug:');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('PORT:', process.env.PORT);
+  console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+  console.log('MONGODB_URI length:', process.env.MONGODB_URI?.length || 0);
+  
+  if (!process.env.MONGODB_URI) {
+    console.error('❌ MONGODB_URI environment variable is missing!');
+    console.log('Available env vars:', Object.keys(process.env).filter(key => key.includes('MONGO')));
+  }
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Serve static files
