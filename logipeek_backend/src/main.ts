@@ -45,6 +45,16 @@ async function bootstrap() {
       timestamp: new Date().toISOString(),
       message: 'LogiPeek Backend ishlamoqda',
       environment: process.env.NODE_ENV || 'development',
+      port: process.env.PORT || 5000,
+    });
+  });
+
+  // Additional health check after API prefix
+  app.use('/api/v1/health', (req, res) => {
+    res.status(200).json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      message: 'LogiPeek Backend API ishlamoqda',
     });
   });
 
@@ -65,7 +75,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT || 5000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0'); // 0.0.0.0'ga bind qilish
 
   console.log(`
 ╔═══════════════════════════════════════╗
