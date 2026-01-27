@@ -13,10 +13,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     @InjectModel(User.name)
     private userModel: Model<User>,
   ) {
+    const jwtSecret = configService.get('JWT_SECRET') || 'fallback_jwt_secret_for_development';
+    
+    if (!configService.get('JWT_SECRET')) {
+      console.warn('⚠️  JWT_SECRET not found, using fallback secret');
+    }
+    
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get('JWT_SECRET'),
+      secretOrKey: jwtSecret,
     });
   }
 

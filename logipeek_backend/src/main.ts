@@ -17,10 +17,15 @@ async function bootstrap() {
   console.log('PORT:', process.env.PORT);
   console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
   console.log('MONGODB_URI length:', process.env.MONGODB_URI?.length || 0);
+  console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+  console.log('JWT_SECRET length:', process.env.JWT_SECRET?.length || 0);
+  console.log('CORS_ORIGIN:', process.env.CORS_ORIGIN);
   
   if (!process.env.MONGODB_URI) {
     console.error('❌ MONGODB_URI environment variable is missing!');
-    console.log('Available env vars:', Object.keys(process.env).filter(key => key.includes('MONGO')));
+  }
+  if (!process.env.JWT_SECRET) {
+    console.error('❌ JWT_SECRET environment variable is missing!');
   }
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
