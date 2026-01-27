@@ -31,7 +31,7 @@ import { mongodbConfig } from './config/mongodb.config';
       envFilePath: '.env',
     }),
     MongooseModule.forRoot(
-      process.env.MONGODB_URI || 'mongodb://localhost:27017/logipeek_db', 
+      process.env.MONGODB_URI || 'mongodb+srv://logipeek_db_user:admin123@cluster0.hzggjlp.mongodb.net/logipeek_db?retryWrites=true&w=majority&appName=Cluster0', 
       mongodbConfig
     ),
     MongooseModule.forFeature([
