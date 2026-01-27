@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as postmark from 'postmark';
+import Mailgun from 'mailgun.js';
+import formData from 'form-data';
 
 @Injectable()
 export class EmailService {
-  private postmarkClient: postmark.ServerClient;
-  private usePostmark: boolean;
+  private mailgun: any;
+  private useMailgun: boolean;
 
   constructor(private configService: ConfigService) {
     // Development rejimini tekshirish
@@ -14,19 +15,25 @@ export class EmailService {
     if (devMode) {
       console.log('⚠️  EMAIL DEV MODE YOQILGAN - Kodlar konsolga yoziladi');
       console.log('⚠️  Haqiqiy email yuborish uchun EMAIL_DEV_MODE=false qiling');
-      this.usePostmark = false;
+      this.useMailgun = false;
       return;
     }
 
-    // Postmark API kalitini tekshirish
-    const postmarkApiKey = this.configService.get('POSTMARK_API_KEY');
-    if (postmarkApiKey) {
-      console.log('📧 Email yuborish uchun Postmark ishlatilmoqda');
-      this.postmarkClient = new postmark.ServerClient(postmarkApiKey);
-      this.usePostmark = true;
+    // Mailgun API kalitini tekshirish
+    const mailgunApiKey = this.configService.get('MAILGUN_API_KEY');
+    const mailgunDomain = this.configService.get('MAILGUN_DOMAIN');
+    
+    if (mailgunApiKey && mailgunDomain) {
+      console.log('📧 Email yuborish uchun Mailgun ishlatilmoqda');
+      const mg = new Mailgun(formData);
+      this.mailgun = mg.client({
+        username: 'api',
+        key: mailgunApiKey,
+      });
+      this.useMailgun = true;
     } else {
-      console.log('❌ POSTMARK_API_KEY topilmadi');
-      this.usePostmark = false;
+      console.log('❌ MAILGUN_API_KEY yoki MAILGUN_DOMAIN topilmadi');
+      this.useMailgun = false;
     }
   }
 
@@ -42,7 +49,7 @@ export class EmailService {
       return true;
     }
 
-    if (!this.usePostmark) {
+    if (!this.useMailgun) {
       throw new Error('Email xizmati sozlanmagan');
     }
 
@@ -84,15 +91,17 @@ export class EmailService {
     `;
 
     try {
-      const result = await this.postmarkClient.sendEmail({
-        From: 'noreply@logipeek.com',
-        To: email,
-        Subject: 'Email Tasdiqlash Kodi - LogiPeek',
-        HtmlBody: htmlContent,
-        TextBody: `LogiPeek - Email Tasdiqlash\n\nAssalomu alaykum! LogiPeek tizimiga xush kelibsiz.\n\nRo'yxatdan o'tishni yakunlash uchun quyidagi tasdiqlash kodini kiriting: ${code}\n\nBu kod 10 daqiqa davomida amal qiladi.`,
-      });
+      const result = await this.mailgun.messages.create(
+        this.configService.get('MAILGUN_DOMAIN'),
+        {
+          from: 'LogiPeek <noreply@' + this.configService.get('MAILGUN_DOMAIN') + '>',
+          to: email,
+          subject: 'Email Tasdiqlash Kodi - LogiPeek',
+          html: htmlContent,
+        }
+      );
 
-      console.log(`✅ Tasdiqlash kodi yuborildi: ${email} (Postmark)`, result);
+      console.log(`✅ Tasdiqlash kodi yuborildi: ${email} (Mailgun)`, result);
       return true;
     } catch (error) {
       console.error('❌ Email yuborish xatosi:', error);
@@ -114,7 +123,7 @@ export class EmailService {
       return true;
     }
 
-    if (!this.usePostmark) {
+    if (!this.useMailgun) {
       throw new Error('Email xizmati sozlanmagan');
     }
 
@@ -156,15 +165,17 @@ export class EmailService {
     `;
 
     try {
-      const result = await this.postmarkClient.sendEmail({
-        From: 'noreply@logipeek.com',
-        To: email,
-        Subject: 'Parolni Tiklash Kodi - LogiPeek',
-        HtmlBody: htmlContent,
-        TextBody: `LogiPeek - Parolni Tiklash\n\nAssalomu alaykum, ${fullName}!\n\nSiz parolni tiklash so'rovini yubordingiz. Yangi parol o'rnatish uchun quyidagi kodni kiriting: ${code}\n\nBu kod 10 daqiqa davomida amal qiladi.`,
-      });
+      const result = await this.mailgun.messages.create(
+        this.configService.get('MAILGUN_DOMAIN'),
+        {
+          from: 'LogiPeek <noreply@' + this.configService.get('MAILGUN_DOMAIN') + '>',
+          to: email,
+          subject: 'Parolni Tiklash Kodi - LogiPeek',
+          html: htmlContent,
+        }
+      );
 
-      console.log(`✅ Parol tiklash kodi yuborildi: ${email} (Postmark)`, result);
+      console.log(`✅ Parol tiklash kodi yuborildi: ${email} (Mailgun)`, result);
       return true;
     } catch (error) {
       console.error('❌ Email yuborish xatosi:', error);
