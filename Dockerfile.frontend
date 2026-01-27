@@ -1,0 +1,29 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY logipeek_frontend/package*.json ./logipeek_frontend/
+
+# Install root dependencies
+RUN npm install
+
+# Install frontend dependencies
+WORKDIR /app/logipeek_frontend
+RUN npm install
+
+# Copy frontend source
+COPY logipeek_frontend/ ./
+
+# Build the application
+RUN npm run build
+
+# Install serve to serve static files
+RUN npm install -g serve
+
+# Expose port
+EXPOSE 3000
+
+# Start the application
+CMD ["serve", "-s", "dist", "-l", "3000"]
