@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as Mailjet from 'node-mailjet';
+const Mailjet = require('node-mailjet');
 
 @Injectable()
 export class EmailService {
@@ -24,7 +24,7 @@ export class EmailService {
     
     if (mailjetApiKey && mailjetSecretKey) {
       console.log('📧 Email yuborish uchun Mailjet ishlatilmoqda');
-      this.mailjet = Mailjet.apiConnect(mailjetApiKey, mailjetSecretKey);
+      this.mailjet = Mailjet.connect(mailjetApiKey, mailjetSecretKey);
       this.useMailjet = true;
     } else {
       console.log('❌ MAILJET_API_KEY yoki MAILJET_SECRET_KEY topilmadi');
