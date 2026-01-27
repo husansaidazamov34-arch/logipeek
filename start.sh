@@ -1,2 +1,3 @@
 #!/bin/bash
-cd logipeek_backend && npm run start:prod
+# Railway deployment uchun - cd command ishlatmasdan
+npm run start:prod
