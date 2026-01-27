@@ -4,7 +4,6 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { AppModule } from './app.module';
-import { SuperAdminSyncService } from './services/super-admin-sync.service';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -76,16 +75,6 @@ async function bootstrap() {
 ║   📚 Docs: http://localhost:${port}/api/docs ║
 ╚═══════════════════════════════════════╝
   `);
-
-  // Super admin yaratish
-  console.log('🔧 Super admin yaratilmoqda...');
-  try {
-    const superAdminService = app.get(SuperAdminSyncService);
-    await superAdminService.syncSuperAdmin();
-    console.log('✅ Super admin yaratish tugallandi');
-  } catch (error) {
-    console.error('❌ Super admin yaratishda xatolik:', error.message);
-  }
 }
 
 bootstrap();

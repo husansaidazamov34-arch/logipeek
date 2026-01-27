@@ -12,7 +12,6 @@ import { AdminModule } from './modules/admin/admin.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { EventsGateway } from './gateway/events.gateway';
-import { SuperAdminSyncService } from './services/super-admin-sync.service';
 import { User, UserSchema } from './schemas/user.schema';
 import { DriverProfile, DriverProfileSchema } from './schemas/driver-profile.schema';
 import { ShipperProfile, ShipperProfileSchema } from './schemas/shipper-profile.schema';
@@ -53,7 +52,6 @@ import { mongodbConfig } from './config/mongodb.config';
   ],
   providers: [
     EventsGateway,
-    SuperAdminSyncService,
   ],
 })
 export class AppModule {}
