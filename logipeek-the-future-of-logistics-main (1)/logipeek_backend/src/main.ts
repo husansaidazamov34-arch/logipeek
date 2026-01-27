@@ -68,14 +68,6 @@ async function bootstrap() {
   const port = process.env.PORT || 5000;
   await app.listen(port);
 
-  // Super admin yaratish
-  try {
-    const superAdminService = app.get(SuperAdminSyncService);
-    await superAdminService.syncSuperAdmin();
-  } catch (error) {
-    console.error('Super admin yaratishda xatolik:', error.message);
-  }
-
   console.log(`
 ╔═══════════════════════════════════════╗
 ║   🚀 LogiPeek Backend (NestJS)       ║
@@ -84,6 +76,16 @@ async function bootstrap() {
 ║   📚 Docs: http://localhost:${port}/api/docs ║
 ╚═══════════════════════════════════════╝
   `);
+
+  // Super admin yaratish
+  console.log('🔧 Super admin yaratilmoqda...');
+  try {
+    const superAdminService = app.get(SuperAdminSyncService);
+    await superAdminService.syncSuperAdmin();
+    console.log('✅ Super admin yaratish tugallandi');
+  } catch (error) {
+    console.error('❌ Super admin yaratishda xatolik:', error.message);
+  }
 }
 
 bootstrap();

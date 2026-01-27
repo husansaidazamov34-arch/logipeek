@@ -88,10 +88,16 @@ setTimeout(() => {
   });
 
   // Serve frontend static files
-  app.use(express.static(path.join(__dirname, 'frontend/dist')));
+  app.use(express.static(path.join(__dirname, 'frontend/dist'), {
+    index: false // Disable automatic index.html serving
+  }));
 
   // Handle React Router - serve index.html for all non-API routes
   app.get('*', (req, res) => {
+    // Don't serve index.html for API routes
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
     res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
   });
 
