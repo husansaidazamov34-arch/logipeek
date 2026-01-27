@@ -16,7 +16,6 @@ import { SuperAdminSyncService } from './services/super-admin-sync.service';
 import { User, UserSchema } from './schemas/user.schema';
 import { DriverProfile, DriverProfileSchema } from './schemas/driver-profile.schema';
 import { ShipperProfile, ShipperProfileSchema } from './schemas/shipper-profile.schema';
-import { VerificationCode, VerificationCodeSchema } from './schemas/verification-code.schema';
 import { AdminAction, AdminActionSchema } from './schemas/admin-action.schema';
 import { Shipment, ShipmentSchema } from './schemas/shipment.schema';
 import { ShipmentStatusHistory, ShipmentStatusHistorySchema } from './schemas/shipment-status-history.schema';
@@ -38,7 +37,6 @@ import { mongodbConfig } from './config/mongodb.config';
       { name: User.name, schema: UserSchema },
       { name: DriverProfile.name, schema: DriverProfileSchema },
       { name: ShipperProfile.name, schema: ShipperProfileSchema },
-      { name: VerificationCode.name, schema: VerificationCodeSchema },
       { name: AdminAction.name, schema: AdminActionSchema },
       { name: Shipment.name, schema: ShipmentSchema },
       { name: ShipmentStatusHistory.name, schema: ShipmentStatusHistorySchema },

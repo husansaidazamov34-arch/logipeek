@@ -8,7 +8,6 @@ import { Shipment } from '../../schemas/shipment.schema';
 import { ShipmentStatusHistory } from '../../schemas/shipment-status-history.schema';
 import { Notification } from '../../schemas/notification.schema';
 import { AdminAction } from '../../schemas/admin-action.schema';
-import { VerificationCode } from '../../schemas/verification-code.schema';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import * as bcrypt from 'bcryptjs';
 
@@ -29,8 +28,6 @@ export class UsersService {
     private notificationModel: Model<Notification>,
     @InjectModel(AdminAction.name)
     private adminActionModel: Model<AdminAction>,
-    @InjectModel(VerificationCode.name)
-    private verificationCodeModel: Model<VerificationCode>,
   ) {}
 
   async findOne(id: string) {
@@ -184,9 +181,6 @@ export class UsersService {
     await this.adminActionModel.deleteMany({
       $or: [{ adminId: userId }, { targetUserId: userId }]
     });
-
-    // Delete verification codes
-    await this.verificationCodeModel.deleteMany({ email: user.email });
 
     // Finally delete the user
     await this.userModel.deleteOne({ _id: userId });

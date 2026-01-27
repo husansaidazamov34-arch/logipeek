@@ -9,7 +9,6 @@ import { Shipment, ShipmentSchema } from '../../schemas/shipment.schema';
 import { ShipmentStatusHistory, ShipmentStatusHistorySchema } from '../../schemas/shipment-status-history.schema';
 import { Notification, NotificationSchema } from '../../schemas/notification.schema';
 import { AdminAction, AdminActionSchema } from '../../schemas/admin-action.schema';
-import { VerificationCode, VerificationCodeSchema } from '../../schemas/verification-code.schema';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -22,7 +21,6 @@ import { AuthModule } from '../auth/auth.module';
       { name: ShipmentStatusHistory.name, schema: ShipmentStatusHistorySchema },
       { name: Notification.name, schema: NotificationSchema },
       { name: AdminAction.name, schema: AdminActionSchema },
-      { name: VerificationCode.name, schema: VerificationCodeSchema },
     ]),
     AuthModule,
   ],
