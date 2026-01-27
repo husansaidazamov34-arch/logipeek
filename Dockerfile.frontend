@@ -3,14 +3,9 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
-COPY logipeek_frontend/package*.json ./logipeek_frontend/
+COPY logipeek_frontend/package*.json ./
 
-# Install root dependencies
-RUN npm install
-
-# Install frontend dependencies
-WORKDIR /app/logipeek_frontend
+# Install dependencies
 RUN npm install
 
 # Copy frontend source
