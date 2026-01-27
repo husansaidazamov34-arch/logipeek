@@ -1,0 +1,85 @@
+# Multi-stage build for fullstack deployment
+FROM node:20-alpine AS frontend-build
+
+# Frontend build
+WORKDIR /app/frontend
+COPY logipeek_frontend/package*.json ./
+RUN npm install
+COPY logipeek_frontend/ ./
+RUN npm run build
+
+# Backend build
+FROM node:20-alpine AS backend-build
+
+WORKDIR /app/backend
+COPY logipeek_backend/package*.json ./
+RUN npm install
+COPY logipeek_backend/ ./
+RUN npm run build
+
+# Final stage - serve both frontend and backend
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy backend build
+COPY --from=backend-build /app/backend/dist ./backend/dist
+COPY --from=backend-build /app/backend/node_modules ./backend/node_modules
+COPY --from=backend-build /app/backend/package*.json ./backend/
+
+# Copy frontend build
+COPY --from=frontend-build /app/frontend/dist ./frontend/dist
+
+# Install serve for frontend
+RUN npm install -g serve
+
+# Create startup script
+RUN echo '#!/bin/sh' > /app/start.sh && \
+    echo 'echo "🚀 Starting LogiPeek Fullstack..."' >> /app/start.sh && \
+    echo 'echo "📱 Frontend will be available on port $PORT"' >> /app/start.sh && \
+    echo 'echo "🔧 Backend API will be available on /api/v1"' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Start backend in background' >> /app/start.sh && \
+    echo 'cd /app/backend && node dist/main.js &' >> /app/start.sh && \
+    echo 'BACKEND_PID=$!' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Start frontend proxy server' >> /app/start.sh && \
+    echo 'cd /app' >> /app/start.sh && \
+    echo 'cat > server.js << EOF' >> /app/start.sh && \
+    echo 'const express = require("express");' >> /app/start.sh && \
+    echo 'const { createProxyMiddleware } = require("http-proxy-middleware");' >> /app/start.sh && \
+    echo 'const path = require("path");' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo 'const app = express();' >> /app/start.sh && \
+    echo 'const PORT = process.env.PORT || 3000;' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '// Proxy API requests to backend' >> /app/start.sh && \
+    echo 'app.use("/api", createProxyMiddleware({' >> /app/start.sh && \
+    echo '  target: "http://localhost:5000",' >> /app/start.sh && \
+    echo '  changeOrigin: true' >> /app/start.sh && \
+    echo '}));' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '// Serve frontend static files' >> /app/start.sh && \
+    echo 'app.use(express.static(path.join(__dirname, "frontend/dist")));' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '// Handle React Router' >> /app/start.sh && \
+    echo 'app.get("*", (req, res) => {' >> /app/start.sh && \
+    echo '  res.sendFile(path.join(__dirname, "frontend/dist/index.html"));' >> /app/start.sh && \
+    echo '});' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo 'app.listen(PORT, () => {' >> /app/start.sh && \
+    echo '  console.log(`🌐 Fullstack app running on port ${PORT}`);' >> /app/start.sh && \
+    echo '});' >> /app/start.sh && \
+    echo 'EOF' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Install express and proxy middleware' >> /app/start.sh && \
+    echo 'npm init -y' >> /app/start.sh && \
+    echo 'npm install express http-proxy-middleware' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Start the proxy server' >> /app/start.sh && \
+    echo 'node server.js' >> /app/start.sh && \
+    chmod +x /app/start.sh
+
+EXPOSE 3000
+
+CMD ["/app/start.sh"]
