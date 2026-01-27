@@ -19,8 +19,8 @@ COPY logipeek_backend/ ./
 # Build the application
 RUN npm run build
 
-# Expose port
-EXPOSE 5000
+# Use Railway's dynamic port
+EXPOSE $PORT
 
 # Start the application
 CMD ["npm", "run", "start:prod"]
