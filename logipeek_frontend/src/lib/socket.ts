@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { getToken } from './auth';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:5000';
+const WS_URL = import.meta.env.VITE_WS_URL || window.location.origin;
 
 let socket: Socket | null = null;
 
