@@ -55,6 +55,13 @@ export class AdminController {
     return this.adminService.createAdmin(createAdminDto, req.user.userId);
   }
 
+  @Post('create-super-admin')
+  @ApiOperation({ summary: 'Super admin yaratish (public endpoint)' })
+  @ApiResponse({ status: 201, description: 'Super admin muvaffaqiyatli yaratildi' })
+  async createSuperAdmin() {
+    return this.adminService.createSuperAdmin();
+  }
+
   @Delete('admins/:id')
   @UseGuards(SuperAdminGuard)
   @ApiOperation({ summary: 'Adminni o\'chirish (faqat super admin)' })

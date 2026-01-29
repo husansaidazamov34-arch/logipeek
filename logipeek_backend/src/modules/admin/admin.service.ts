@@ -150,6 +150,82 @@ export class AdminService {
     }
 
     // Hash password
+    const hashedPassword = await bcrypt.hash(createAdminDto.password, 10);
+
+    // Create admin user
+    const adminUser = new this.userModel({
+      fullName: createAdminDto.fullName,
+      email: createAdminDto.email,
+      phone: createAdminDto.phone,
+      passwordHash: hashedPassword,
+      role: UserRole.ADMIN,
+      isActive: true,
+    });
+
+    await adminUser.save();
+
+    // Log admin action
+    await this.logAdminAction(
+      createdByAdminId,
+      adminUser._id.toString(),
+      'admin_created',
+      `Yangi admin yaratildi: ${adminUser.fullName}`,
+    );
+
+    return this.sanitizeUser(adminUser);
+  }
+
+  // Create super admin (public method for initial setup)
+  async createSuperAdmin() {
+    const superAdminEmail = process.env.SUPER_ADMIN || 'pes159541@gmail.com';
+    
+    // Check if super admin already exists
+    const existingUser = await this.userModel.findOne({ email: superAdminEmail });
+    
+    if (existingUser) {
+      // Update existing user to be super admin
+      existingUser.role = UserRole.ADMIN;
+      existingUser.isActive = true;
+      existingUser.isSuperAdmin = true;
+      await existingUser.save();
+      
+      return {
+        message: 'Mavjud foydalanuvchi super admin qilindi',
+        email: superAdminEmail,
+        user: this.sanitizeUser(existingUser)
+      };
+    } else {
+      // Create new super admin
+      const hashedPassword = await bcrypt.hash('SuperAdmin123!', 10);
+      
+      const superAdmin = new this.userModel({
+        fullName: 'Super Administrator',
+        email: superAdminEmail,
+        phone: '+998901234567',
+        passwordHash: hashedPassword,
+        role: UserRole.ADMIN,
+        isActive: true,
+        isSuperAdmin: true,
+      });
+
+      await superAdmin.save();
+
+      return {
+        message: 'Yangi super admin yaratildi',
+        email: superAdminEmail,
+        password: 'SuperAdmin123!',
+        user: this.sanitizeUser(superAdmin),
+        warning: 'Parolni o\'zgartirishni unutmang!'
+      };
+    }
+  }
+
+  private sanitizeUser(user: User) {
+    const { passwordHash, ...result } = user.toObject();
+    return result;
+  }
+
+    // Hash password
     const passwordHash = await bcrypt.hash(createAdminDto.password, 10);
 
     const admin = new this.userModel({
