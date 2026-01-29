@@ -24,36 +24,8 @@ import { UserRole } from '../../schemas/user.schema';
 
 @ApiTags('admin')
 @Controller('admin')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
-
-  @Get('dashboard/stats')
-  @UseGuards(AdminGuard)
-  @ApiOperation({ summary: 'Dashboard statistikalari' })
-  @ApiResponse({ status: 200, description: 'Statistikalar muvaffaqiyatli olindi' })
-  async getDashboardStats() {
-    return this.adminService.getDashboardStats();
-  }
-
-  // Admin management
-  @Get('admins')
-  @UseGuards(AdminGuard)
-  @ApiOperation({ summary: 'Barcha adminlarni ko\'rish' })
-  @ApiResponse({ status: 200, description: 'Adminlar ro\'yxati' })
-  async getAllAdmins(@Request() req) {
-    return this.adminService.getAllAdmins();
-  }
-
-  @Post('admins')
-  @UseGuards(SuperAdminGuard)
-  @ApiOperation({ summary: 'Yangi admin yaratish (faqat super admin)' })
-  @ApiResponse({ status: 201, description: 'Admin muvaffaqiyatli yaratildi' })
-  @ApiResponse({ status: 403, description: 'Faqat super admin bu amalni bajara oladi' })
-  async createAdmin(@Body() createAdminDto: CreateAdminDto, @Request() req) {
-    return this.adminService.createAdmin(createAdminDto, req.user.userId);
-  }
 
   @Post('create-super-admin')
   @ApiOperation({ summary: 'Super admin yaratish (public endpoint)' })
@@ -62,8 +34,38 @@ export class AdminController {
     return this.adminService.createSuperAdmin();
   }
 
+  @Get('dashboard/stats')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Dashboard statistikalari' })
+  @ApiResponse({ status: 200, description: 'Statistikalar muvaffaqiyatli olindi' })
+  async getDashboardStats() {
+    return this.adminService.getDashboardStats();
+  }
+
+  // Admin management
+  @Get('admins')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Barcha adminlarni ko\'rish' })
+  @ApiResponse({ status: 200, description: 'Adminlar ro\'yxati' })
+  async getAllAdmins(@Request() req) {
+    return this.adminService.getAllAdmins();
+  }
+
+  @Post('admins')
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Yangi admin yaratish (faqat super admin)' })
+  @ApiResponse({ status: 201, description: 'Admin muvaffaqiyatli yaratildi' })
+  @ApiResponse({ status: 403, description: 'Faqat super admin bu amalni bajara oladi' })
+  async createAdmin(@Body() createAdminDto: CreateAdminDto, @Request() req) {
+    return this.adminService.createAdmin(createAdminDto, req.user.userId);
+  }
+
   @Delete('admins/:id')
-  @UseGuards(SuperAdminGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Adminni o\'chirish (faqat super admin)' })
   @ApiResponse({ status: 200, description: 'Admin muvaffaqiyatli o\'chirildi' })
   @ApiResponse({ status: 403, description: 'Faqat super admin bu amalni bajara oladi' })
@@ -73,7 +75,8 @@ export class AdminController {
 
   // User management
   @Get('users/:id')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Foydalanuvchi tafsilotlari' })
   @ApiResponse({ status: 200, description: 'Foydalanuvchi ma\'lumotlari' })
   async getUserDetails(@Param('id') userId: string, @Request() req) {
@@ -81,7 +84,8 @@ export class AdminController {
   }
 
   @Get('users')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Barcha foydalanuvchilarni ko\'rish' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -98,7 +102,8 @@ export class AdminController {
   }
 
   @Put('users/:id/status')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Foydalanuvchi holatini o\'zgartirish' })
   @ApiResponse({ status: 200, description: 'Foydalanuvchi holati yangilandi' })
   async updateUserStatus(
@@ -110,7 +115,8 @@ export class AdminController {
   }
 
   @Delete('users/:id')
-  @UseGuards(SuperAdminGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Foydalanuvchini o\'chirish (faqat super admin)' })
   @ApiResponse({ status: 200, description: 'Foydalanuvchi muvaffaqiyatli o\'chirildi' })
   @ApiResponse({ status: 403, description: 'Faqat super admin bu amalni bajara oladi' })
@@ -120,7 +126,8 @@ export class AdminController {
 
   // License approval management
   @Get('licenses/pending')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Tasdiqlanmagan haydovchilik guvohnomalari' })
   @ApiResponse({ status: 200, description: 'Kutilayotgan guvohnomaların ro\'yxati' })
   async getPendingLicenseApprovals(@Request() req) {
@@ -128,7 +135,8 @@ export class AdminController {
   }
 
   @Get('licenses/approved')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Tasdiqlangan haydovchilik guvohnomalari' })
   @ApiResponse({ status: 200, description: 'Tasdiqlangan guvohnomaların ro\'yxati' })
   async getApprovedLicenses(@Request() req) {
@@ -136,7 +144,8 @@ export class AdminController {
   }
 
   @Get('licenses/rejected')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Rad etilgan haydovchilik guvohnomalari' })
   @ApiResponse({ status: 200, description: 'Rad etilgan guvohnomaların ro\'yxati' })
   async getRejectedLicenses(@Request() req) {
@@ -144,7 +153,8 @@ export class AdminController {
   }
 
   @Post('licenses/approve')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Haydovchilik guvohnomasini tasdiqlash yoki rad etish' })
   @ApiResponse({ status: 200, description: 'Guvohnoma holati yangilandi' })
   async approveLicense(@Body() approveLicenseDto: ApproveLicenseDto, @Request() req) {
@@ -157,7 +167,8 @@ export class AdminController {
 
   // Admin action logs
   @Get('logs')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Admin amallar tarixi' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
