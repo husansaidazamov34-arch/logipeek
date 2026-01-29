@@ -66,9 +66,9 @@ export class AdminService {
   }
 
   // Get all users with pagination
-  async getAllUsers(page: number = 1, limit: number = 10, role?: UserRole) {
+  async getAllUsers(page: number = 1, limit: number = 20, role?: UserRole) {
     const skip = (page - 1) * limit;
-    const filter: any = {};
+    const filter: any = { isActive: true };
     
     if (role) {
       filter.role = role;
@@ -76,12 +76,12 @@ export class AdminService {
 
     const [users, total] = await Promise.all([
       this.userModel.find(filter)
-        .populate('driverProfile', 'licensePlate rating totalTrips status isLicenseApproved')
-        .populate('shipperProfile', 'companyName totalShipments')
         .select('-passwordHash')
+        .populate('driverProfile', 'licensePlate rating totalTrips')
+        .populate('shipperProfile', 'companyName')
+        .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 }),
+        .limit(limit),
       this.userModel.countDocuments(filter),
     ]);
 
@@ -220,39 +220,7 @@ export class AdminService {
     }
   }
 
-  private sanitizeUser(user: User) {
-    const { passwordHash, ...result } = user.toObject();
-    return result;
-  }
-
-    // Hash password
-    const passwordHash = await bcrypt.hash(createAdminDto.password, 10);
-
-    const admin = new this.userModel({
-      email: createAdminDto.email,
-      passwordHash,
-      fullName: createAdminDto.fullName,
-      phone: createAdminDto.phone,
-      role: UserRole.ADMIN,
-      createdByAdminId,
-    });
-
-    const savedAdmin = await admin.save();
-
-    // Log admin action
-    await this.logAdminAction(
-      createdByAdminId,
-      savedAdmin._id.toString(),
-      'admin_created',
-      'Yangi admin yaratildi',
-      { adminEmail: createAdminDto.email }
-    );
-
-    const { passwordHash: _, ...result } = savedAdmin.toObject();
-    return result;
-  }
-
-  // Delete admin
+  // Delete admin user
   async deleteAdmin(adminId: string, requestingAdminId: string) {
     const admin = await this.userModel.findById(adminId);
     
@@ -261,19 +229,17 @@ export class AdminService {
     }
 
     if (admin.isSuperAdmin) {
-      throw new ForbiddenException('Super adminni o\'chirib bo\'lmaydi');
+      throw new ForbiddenException('Super adminni o\'chirish mumkin emas');
     }
 
-    admin.isActive = false;
-    await admin.save();
+    await this.userModel.findByIdAndDelete(adminId);
 
     // Log admin action
     await this.logAdminAction(
       requestingAdminId,
       adminId,
       'admin_deleted',
-      'Admin o\'chirildi',
-      { adminEmail: admin.email }
+      `Admin o'chirildi: ${admin.fullName}`,
     );
 
     return { message: 'Admin muvaffaqiyatli o\'chirildi' };
@@ -313,7 +279,7 @@ export class AdminService {
       { reason: updateStatusDto.reason }
     );
 
-    return user;
+    return this.sanitizeUser(user);
   }
 
   // Delete user
@@ -325,19 +291,17 @@ export class AdminService {
     }
 
     if (user.role === UserRole.ADMIN) {
-      throw new ForbiddenException('Adminni oddiy admin o\'chira olmaydi');
+      throw new ForbiddenException('Adminni oddiy delete orqali o\'chirish mumkin emas');
     }
 
-    user.isActive = false;
-    await user.save();
+    await this.userModel.findByIdAndDelete(userId);
 
     // Log admin action
     await this.logAdminAction(
       adminId,
       userId,
       'user_deleted',
-      'Foydalanuvchi o\'chirildi',
-      { userEmail: user.email }
+      `Foydalanuvchi o'chirildi: ${user.fullName}`,
     );
 
     return { message: 'Foydalanuvchi muvaffaqiyatli o\'chirildi' };
@@ -346,33 +310,29 @@ export class AdminService {
   // Get approved licenses
   async getApprovedLicenses() {
     return this.driverProfileModel.find({ 
-      isLicenseApproved: true,
-      licenseImageUrl: { $ne: null }
+      isLicenseApproved: true 
     })
     .populate('user', 'fullName email phone')
-    .populate('licenseApprovedByAdmin', 'fullName email')
     .sort({ licenseApprovedAt: -1 });
   }
 
   // Get rejected licenses
   async getRejectedLicenses() {
     return this.driverProfileModel.find({ 
-      isLicenseApproved: false,
-      licenseImageUrl: { $ne: null }
+      isLicenseApproved: false 
     })
     .populate('user', 'fullName email phone')
-    .populate('licenseApprovedByAdmin', 'fullName email')
     .sort({ licenseApprovedAt: -1 });
   }
 
-  // Get admin actions log
+  // Get admin actions
   async getAdminActions(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
 
     const [actions, total] = await Promise.all([
       this.adminActionModel.find()
-        .populate('admin', 'fullName email')
-        .populate('targetUser', 'fullName email')
+        .populate('adminId', 'fullName email')
+        .populate('targetUserId', 'fullName email')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -388,7 +348,7 @@ export class AdminService {
     };
   }
 
-  // Private method to log admin actions
+  // Log admin action
   private async logAdminAction(
     adminId: string,
     targetUserId: string | null,
@@ -405,5 +365,10 @@ export class AdminService {
     });
 
     await adminAction.save();
+  }
+
+  private sanitizeUser(user: User) {
+    const { passwordHash, ...result } = user.toObject();
+    return result;
   }
 }
