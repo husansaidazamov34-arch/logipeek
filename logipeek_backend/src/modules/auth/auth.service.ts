@@ -95,25 +95,33 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
+    console.log(`🔐 Login urinishi: ${email}`);
+
     const user = await this.userModel.findOne({ email })
       .populate('driverProfile')
       .populate('shipperProfile');
 
     if (!user) {
+      console.log(`❌ Foydalanuvchi topilmadi: ${email}`);
       throw new UnauthorizedException('Email yoki parol noto\'g\'ri');
     }
+
+    console.log(`👤 Foydalanuvchi topildi: ${user.fullName}, Role: ${user.role}, Active: ${user.isActive}`);
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
+      console.log(`❌ Parol noto'g'ri: ${email}`);
       throw new UnauthorizedException('Email yoki parol noto\'g\'ri');
     }
 
     if (!user.isActive) {
+      console.log(`❌ Akkaunt faol emas: ${email}`);
       throw new UnauthorizedException('Akkaunt faol emas');
     }
 
     const token = this.generateToken(user);
+    console.log(`✅ Login muvaffaqiyatli: ${email}`);
 
     return {
       user: this.sanitizeUser(user),

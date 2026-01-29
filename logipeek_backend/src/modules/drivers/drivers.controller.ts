@@ -18,16 +18,16 @@ export class DriversController {
     return this.driversService.getStats(req.user.userId);
   }
 
-  @Get()
-  @ApiOperation({ summary: 'Barcha haydovchilarni olish' })
-  findAll() {
-    return this.driversService.findAll();
-  }
-
   @Get('online/all')
   @ApiOperation({ summary: 'Barcha onlayn haydovchilarni olish' })
   findAllOnline() {
     return this.driversService.findAllOnline();
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Barcha haydovchilarni olish' })
+  findAll() {
+    return this.driversService.findAll();
   }
 
   @Get(':id')
